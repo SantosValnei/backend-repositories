@@ -1,4 +1,5 @@
 import User from "../models/Users";
+import { createPasswordHash } from "../services/auth"
 
 class UsersController {
     async index(req, res) {
@@ -40,9 +41,12 @@ class UsersController {
                 .json({ message: `User ${email} already exists.` });
             }
 
-            // const encryptedPassword = await createPasswordHash(password);
+            const encryptedPassword = await createPasswordHash(password);
 
-            const newUser = await User.create({ email, password});
+            const newUser = await User.create({ 
+                email,
+                password: encryptedPassword
+            });
 
             return res.status(201).json(newUser);
 
@@ -53,23 +57,31 @@ class UsersController {
     }
 
     async update(req, res) {
-        const id = req.params.id.toString();
-        const { email, password }= req.body;
-        
+        try {
+            const id = req.params.id.toString();
+            const { email, password }= req.body;
+            
 
-        const user = await User.findById(id);
+            const user = await User.findById(id);
 
-        if(!user) {
-            res.status(404).json();
+            if(!user) {
+                res.status(404).json();
+            }
+
+            const encryptedPassword = await createPasswordHash(password);
+            
+            await user.updateOne({ 
+                email,
+                password: encryptedPassword
+            });
+
+            return res.status(200).json();
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Internal server error." })
         }
         
-        await user.updateOne({ email, password });
-
-        return res.status(200).json();
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Internal server error." })
-    }
+    } 
 
     async destroy(req, res) {   
         try {
@@ -82,7 +94,7 @@ class UsersController {
 
             await user.deleteOne();
         
-            return res.status(200).json();
+            return res.status(200).json({ message: "User successfully deleted"});
         }  catch (err) {
             console.error(err);
             return res.status(500).json({ error: "Internal server error." })

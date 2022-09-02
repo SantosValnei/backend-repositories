@@ -1,8 +1,0 @@
-iniciando servidor:
-yarn init -y
-
-instalando pacotes:
-yarn add express cors
-
-criando pasta src e adicionando arquivo app.js:
-criar uma pasta chamada src 
